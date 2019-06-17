@@ -2,7 +2,7 @@
 # @Time    : 19-5-8 下午6:23
 # @Author  : allen.you
 import subprocess
-from py_gerrit.models.plugin import Plugin
+from .models.plugin import Plugin
 
 
 class PluginSSHCommands(object):

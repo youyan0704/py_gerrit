@@ -4,7 +4,7 @@
 import json
 import logging
 
-from py_gerrit.config import GERRIT_MAGIC_JSON_PREFIX
+from config import GERRIT_MAGIC_JSON_PREFIX
 
 
 def _decode_response(response):

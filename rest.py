@@ -5,11 +5,11 @@ import logging
 
 import requests
 from requests.auth import HTTPBasicAuth
-from py_gerrit.models.plugin import Plugin
-from py_gerrit.models.group import Group
-from py_gerrit.models.user import User
-from py_gerrit.models.project import Project
-from py_gerrit.utils import _decode_response, decode_model
+from .models.plugin import Plugin
+from .models.group import Group
+from .models.user import User
+from .models.project import Project
+from .utils.util import _decode_response, decode_model
 
 log = logging.getLogger(__name__)
 
