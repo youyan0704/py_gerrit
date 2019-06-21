@@ -2,7 +2,7 @@
 # @Time    : 19-5-21 下午5:04
 # @Author  : allen.you
 
-from utils.jsonModel import jsonModel
+from py_gerrit.utils.jsonModel import jsonModel
 
 
 @jsonModel()

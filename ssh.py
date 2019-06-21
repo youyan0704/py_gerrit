@@ -81,6 +81,27 @@ class GerritSSHCommands(object):
         """
         self.run_gerrit_command('close-connection', session_id, **kwargs)
 
+    def create_account(self, username, **kwargs):
+        """
+            gerrit create-account USERNAME [--] [--email EMAIL] [--full-name NAME] [--group (-g) GROUP] [--help (-h)] [--http-password PASSWORD] [--ssh-key -|KEY] [--trace] [--trace-id VAL]
+
+             USERNAME                 : name of the user account
+             --                       : end of options (default: false)
+             --email EMAIL            : email address of the account
+             --full-name NAME         : display name of the account
+             --group (-g) GROUP       : groups to add account to
+             --help (-h)              : display this help text (default: true)
+             --http-password PASSWORD : password for HTTP authentication
+             --ssh-key -|KEY          : public key for SSH authentication
+             --trace                  : enable request tracing (default: false)
+             --trace-id VAL           : trace ID (can only be set if --trace was set too)
+
+        """
+        status, data = self.run_gerrit_command('create_account', username, **kwargs)
+
+        return status, data
+
+
     def create_project(self, project, **kwargs):
         """
             gerrit create-project [NAME] [--] [--branch (-b) BRANCH] [--change-id [TRUE | FALSE | INHERIT]] [--content-merge [TRUE | FALSE | INHERIT]] [--contributor-agreements [TRUE | FALSE | INHERIT]] [--create-new-change-for-all-not-in-target (--ncfa)] [--description (-d) DESCRIPTION] [--empty-commit] [--help (-h)] [--max-object-size-limit VAL] [--new-change-for-all-not-in-target [TRUE | FALSE | INHERIT]] [--owner (-o) GROUP] [--parent (-p) NAME] [--permissions-only] [--plugin-config VAL] [--reject-empty-commit [TRUE | FALSE | INHERIT]] [--require-change-id (--id)] [--signed-off-by [TRUE | FALSE | INHERIT]] [--submit-type (-t) [INHERIT | FAST_FORWARD_ONLY | MERGE_IF_NECESSARY | REBASE_IF_NECESSARY | REBASE_ALWAYS | MERGE_ALWAYS | CHERRY_PICK]] [--suggest-parents (-S)] [--trace] [--trace-id VAL] [--use-content-merge] [--use-contributor-agreements (--ca)] [--use-signed-off-by (--so)]

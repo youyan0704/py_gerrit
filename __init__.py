@@ -6,6 +6,6 @@ from __future__ import absolute_import
 from .ssh import GerritSSHCommands
 from .rest import GerritRestApi
 
-__version__ = '1.0.0'
+__version__ = '1.0.2'
 
 __all__ = ['GerritSSHCommands', 'GerritRestApi']

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 19-5-15 下午5:38
 # @Author  : allen.you
-from utils.jsonModel import jsonModel
+from py_gerrit.utils.jsonModel import jsonModel
 
 
 @jsonModel()
