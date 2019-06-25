@@ -155,7 +155,7 @@ class GerritSSHCommands(object):
              --use-signed-off-by (--so)             : if signed-off-by is required
 
         """
-        status, data = self.run_gerrit_command('create-project', project, **kwargs)
+        status, data = self.run_gerrit_command('create-project', project, '--empty-commit', **kwargs)
 
         return status, data
 
