@@ -3,7 +3,14 @@
 # @Author  : allen.you
 from .user import User
 from .project import Project
-from .group import Group
+from .group import Group, GroupDetail
 from .plugin import Plugin
+from .branch import Branch
 
-__all__ = ['User', 'Project', 'Group', 'Plugin']
+
+__all__ = ['Branch',
+           'Group',
+           'GroupDetail',
+           'Plugin',
+           'Project',
+           'User']

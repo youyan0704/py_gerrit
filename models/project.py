@@ -46,4 +46,4 @@ class Project(object):
 
 
     def __repr__(self):
-        return 'Project Name: %s, State: %s' % (self.id, self.state)
+        return 'Project Name: %s, State: %s' % (self.id, self.state) + ' ,Parent: %s' % self.parent if self.parent else ''

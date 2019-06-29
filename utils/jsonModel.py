@@ -5,7 +5,6 @@
 
 def jsonModel(objectMap={}, listClassMap={}):
     """
-    It is very easy to use !
     @jsonModel(objectMap={"car": Car}, listClassMap={"pets": Dog})
     or
     @jsonModel({"car": Car}, {"pets": Dog})
