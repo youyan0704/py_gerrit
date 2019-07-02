@@ -10,7 +10,9 @@ GERRIT_MAGIC_JSON_PREFIX = ")]}\'\n"
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.67 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-    # 'Accept': '*/*',
+    # 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+    'Accept': '*/*',
+    'connection': 'keep-alive',
     'Accept-Encoding': 'gzip, deflate',
+    'Authorization': 'Basic YWxsZW4ueW91OmFsbGVuLnlvdQ==',
     'Cookie': 'GERRIT_UI=GWT'}
