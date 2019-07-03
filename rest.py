@@ -1307,6 +1307,14 @@ class GerritRestApi(ResetApi):
 
         return self.put('/config/server/preferences.edit', kwargs)
 
+    def list_access_rights(self, **kwargs):
+        """Lists the access rights for projects.
+        The projects for which the access rights should be returned must be specified as project options.
+        The project can be specified multiple times."""
+
+        return self.get('/access', params=kwargs)
+
+
 if __name__ == '__main__':
     gerrit = GerritRestApi('http://172.16.20.56', 'allen.you', 'allen.you')
     # print(gerrit.create_project('vivo4', description='vivo4'))
