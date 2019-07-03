@@ -1186,10 +1186,131 @@ class GerritRestApi(ResetApi):
         """
         return self.post('/accounts/%s/stars.changes/%s' % (account, change_id), **kwargs)
 
+    def get_version(self):
+        """Returns the version of the Gerrit server."""
+
+        return self.get('config/server/version')
+
+    def get_server_info(self):
+        """Returns the information about the Gerrit server configuration."""
+
+        return self.get('config/server/info')
+
+    def check_consistency(self, consistency):
+        """Runs consistency checks and returns detected problems.
+            eg. {
+                    "check_accounts": {},
+                    "check_account_external_ids": {}
+                  }
+        """
+
+        return self.post('/config/server/check.consistency', consistency)
+
+
+    def reload_config(self):
+        """Reloads the gerrit.config configuration."""
+
+        return self.post('/config/server/reload', None)
+
+    def confirm_email(self, token):
+        """Confirms that the user owns an email address.
+            eg. {
+                    "token": "Enim+QNbAo6TV8Hur8WwoUypI6apG7qBPvF+bw==$MTAwMDAwNDp0ZXN0QHRlc3QuZGU="
+                  }
+        """
+
+        return self.put('/config/server/email.confirm', {'token': token})
+
+    def list_caches(self, **kwargs):
+        """Lists the caches of the server.
+        Caches defined by plugins are included."""
+
+        return self.get('/config/server/caches/', params=kwargs)
+
+    def flush_all_caches(self):
+
+        return self.post('/config/server/caches', {"operation": "FLUSH_ALL"})
+
+    def flush_several_caches_at_once(self, **kwargs):
+
+        data = {"operation": "FLUSH"}
+        data.update(kwargs)
+        return self.post('/config/server/caches', data)
+
+    def get_cache(self, cache):
+        """Retrieves information about a cache."""
+
+        return self.get('/config/server/caches/%s' % cache)
+
+    def flush_cache(self, cache):
+        """Flushes a cache."""
+
+        return self.post('/config/server/caches/%s/flush' % cache, None)
+
+    def get_summary(self, **kwargs):
+        """Retrieves a summary of the current server state."""
+
+        return self.get('/config/server/summary', params=kwargs)
+
+    def list_capabilities(self):
+        """Lists the capabilities that are available in the system. There are two kinds of capabilities: core and plugin-owned capabilities."""
+
+        return self.get('/config/server/capabilities')
+
+    def list_tasks(self):
+        """Lists the tasks from the background work queues that the Gerrit daemon is currently performing, or will perform in the near future."""
+
+        return self.get('/config/server/tasks')
+
+    def get_task(self, task):
+        """Retrieves a task from the background work queue that the Gerrit daemon is currently performing, or will perform in the near future."""
+
+        return self.get('/config/server/tasks/%s' % task)
+
+    def delete_task(self, task):
+        """Kills a task from the background work queue that the Gerrit daemon is currently performing, or will perform in the near future."""
+
+        return self.delete('/config/server/tasks/%s' % task)
+
+    def get_top_menu(self):
+        """Returns the list of additional top menu entries."""
+
+        return self.get('/config/server/top-menus')
+
+    def get_default_user_preferences(self):
+        """Returns the default user preferences for the server."""
+
+        return self.get('/config/server/preferences')
+
+    def set_default_user_preferences(self, **kwargs):
+        """Sets the default user preferences for the server."""
+
+        return self.put('/config/server/preferences', kwargs)
+
+    def get_default_diff_preferences(self):
+        """Returns the default diff preferences for the server.."""
+
+        return self.get('/config/server/preferences.diff')
+
+    def set_default_diff_preferences(self, **kwargs):
+        """Sets the default diff preferences for the server."""
+
+        return self.put('/config/server/preferences.diff', kwargs)
+
+    def get_default_edit_preferences(self):
+        """Returns the default edit preferences for the server.."""
+
+        return self.get('/config/server/preferences.edit')
+
+    def set_default_edit_preferences(self, **kwargs):
+        """Sets the default edit preferences for the server."""
+
+        return self.put('/config/server/preferences.edit', kwargs)
+
 if __name__ == '__main__':
     gerrit = GerritRestApi('http://172.16.20.56', 'allen.you', 'allen.you')
     # print(gerrit.create_project('vivo4', description='vivo4'))
     # print(gerrit.check_access('oppo', account=1000098, ref='refs/heads/master'))
     # print(gerrit.projects(p='SPF2018'))
     # print(gerrit.groups())
-    print(gerrit.get_watched_projects('self'))
+    print(gerrit.get_top_menu())
