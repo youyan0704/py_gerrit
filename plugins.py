@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Time    : 19-5-8 下午6:23
 # @Author  : allen.you
+
+from __future__ import absolute_import
 import subprocess
 from .models.plugin import Plugin
 
@@ -151,9 +153,3 @@ class PluginSSHCommands(object):
         """
         self.run_command('rm', plugin, **kwargs)
 
-
-
-if __name__ == "__main__":
-    plugins = PluginSSHCommands('gerrit56')
-    for p in plugins.ls():
-        print(p)

@@ -686,7 +686,3 @@ class GerritSSHCommands(object):
 
         return data if status == 0 else None
 
-
-if __name__ == '__main__':
-    server = GerritSSHCommands('gerrit56')
-    # server.create_project('oppo')
