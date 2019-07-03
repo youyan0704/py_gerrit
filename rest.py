@@ -74,6 +74,11 @@ class GerritRestApi(ResetApi):
         super().__init__(url, username, password)
         self._login()
 
+    def documentation(self, **kwargs):
+        """With q parameter, search our documentation index for the terms."""
+
+        self.get('/Documentation', params=kwargs)
+
     def projects(self, **kwargs):
         """
             Lists the projects accessible by the caller. This is the same as using the ls-projects command over SSH, and accepts the same options as query parameters.
@@ -483,7 +488,6 @@ class GerritRestApi(ResetApi):
 
         return self.get('/projects/%s/commits/%s/files' % (project, commit), params=kwargs)
 
-
     def ls_dashboards(self, project, **kwargs):
         """List custom dashboards for a project."""
 
@@ -511,54 +515,681 @@ class GerritRestApi(ResetApi):
         """
         self.delete('/projects/%s/dashboards/%s' % (project, dashboard), **kwargs)
 
-    def ls_groups(self, **kwargs):
+    def plugins(self, **kwargs):
         """
-            列出组别
+            Lists the plugins installed on the Gerrit server. Only the enabled plugins are returned unless the all option is specified.
         """
-        groups = self.get('groups', params=kwargs)
+        return self.get('plugins', params=kwargs)
 
-        return groups
+    def install_plugin(self, plugin, url, **kwargs):
+        """Installs a new plugin on the Gerrit server.
+        If a plugin with the specified name already exists it is overwritten.
+        Note: if the plugin provides its own name in the MANIFEST file,
+        then the plugin name from the MANIFEST file has precedence over the {plugin-id} above.
+        eg. {
+                "url": "file:///gerrit/plugins/delete-project/delete-project-2.8.jar"
+              }
+        """
+        data = {'url': url}
+        data.update(kwargs)
 
-    def rename_group(self, group_owner_id, new_name):
-        """
-            重命名组别
-        """
-        response = self.put('groups/%s/name' % group_owner_id, data={'name': new_name})
-        # return _decode_response(response)
+        return self.put('/plugins/%s' % plugin, data)
 
-    def group_detail(self, group_id):
-        """
-            组别详尽信息
-        """
-        group = self.get('groups/%s/detail' % group_id)
+    def get_plugin_status(self, plugin, **kwargs):
+        """Retrieves the status of a plugin on the Gerrit server."""
 
-        return group
+        return self.get('/plugins/%s/gerrit~status' % plugin, params=kwargs)
 
-    def ls_members(self, group):
-        """
-            列出组别成员
-        """
-        members = self.get('groups/%s/members' % group)
-        return members
+    def enable_plugin(self, plugin, **kwargs):
+        """Enables a plugin on the Gerrit server."""
 
-    def ls_groups_in_group(self, group):
-        """
-            组别中包含的组
-        """
-        groups = self.get('groups/%s/groups' % group)
-        return groups
+        return self.post('/plugins/%s/gerrit~disable' % plugin, **kwargs)
 
-    def ls_plugins(self,):
-        """
-            列出插件
-        """
-        plugins = self.get('plugins', params={'all': '', 'n': n, 'S': s})
-        return plugins
+    def disable_plugin(self, plugin, **kwargs):
+        """Disables a plugin on the Gerrit server."""
 
+        return self.post('/plugins/%s/gerrit~enable' % plugin, **kwargs)
+
+    def reload_plugin(self, plugin, **kwargs):
+        """Reloads a plugin on the Gerrit server."""
+
+        return self.post('/plugins/%s/gerrit~reload' % plugin, **kwargs)
+
+    def groups(self, **kwargs):
+        """Lists the groups accessible by the caller. This is the same as using the ls-groups command over SSH, and accepts the same options as query parameters."""
+
+        return self.get('/groups', params=kwargs)
+
+    def get_group(self, group_id, **kwargs):
+        """Retrieves a group."""
+
+        self.get('/groups/%s' % group_id, params=kwargs)
+
+    def create_group(self, group_name, **kwargs):
+        """Creates a new Gerrit internal group."""
+
+        self.put('/groups/%s' % group_name, **kwargs)
+
+    def get_group_detail(self, group_id, **kwargs):
+        """Retrieves a group with the direct members and the directly included groups."""
+
+        self.get('/groups/%s/detail' % group_id, params=kwargs)
+
+    def get_group_name(self, group_id, **kwargs):
+        """Retrieves the name of a group."""
+
+        return self.get('/groups/%s/name' % group_id, params=kwargs)
+
+    def rename_group(self, group_id, group_name, **kwargs):
+        """Renames a Gerrit internal group."""
+
+        data = {'name': group_name}
+        data.update(kwargs)
+
+        self.put('/groups/%s/name' % group_id, data)
+
+    def get_group_description(self, group_id, **kwargs):
+        """Retrieves the description of a group."""
+
+        self.get('/groups/%s/description' % group_id, params=kwargs)
+
+    def set_group_description(self, group_id, description, **kwargs):
+        """Sets the description of a Gerrit internal group."""
+
+        data = {'description': description}
+        data.update(kwargs)
+
+        return self.put('/groups/%s/description' % group_id, data)
+
+    def delete_group_description(self, group_id, **kwargs):
+        """Deletes the description of a Gerrit internal group."""
+
+        return self.delete('/groups/%s/description' % group_id, **kwargs)
+
+    def get_group_options(self, group_id, **kwargs):
+        """Retrieves the options of a group."""
+
+        return self.get('/groups/%s/options' % group_id, params=kwargs)
+
+    def set_group_options(self, group_id, **kwargs):
+        """Sets the options of a Gerrit internal group.
+        eg.{
+            "visible_to_all": true
+          }
+        """
+
+        return self.put('/groups/%s/options' % group_id, **kwargs)
+
+    def get_group_owner(self, group_id, **kwargs):
+        """Retrieves the owner group of a Gerrit internal group."""
+
+        return self.get('/groups/%s/owner' % group_id, params=kwargs)
+
+    def set_group_owner(self, group_id, owner, **kwargs):
+        """Sets the owner group of a Gerrit internal group.
+        eg.{
+            "owner": "6a1e70e1a88782771a91808c8af9bbb7a9871389"
+          }
+        """
+        data = {'owner': owner}
+        data.update(kwargs)
+
+        return self.put('/groups/%s/owner' % group_id, data)
+
+    def get_audit_log(self, group_id, **kwargs):
+        """Gets the audit log of a Gerrit internal group."""
+
+        return self.get('/groups/%s/log.audit' % group_id, params=kwargs)
+
+    def index_group(self, group_id, **kwargs):
+        """Adds or updates the internal group in the secondary index."""
+
+        return self.post('/groups/%s/index' % group_id, **kwargs)
+
+
+    def group_members(self, group, **kwargs):
+        """Lists the direct members of a Gerrit internal group."""
+
+        return self.get('/groups/%s/members' % group, params=kwargs)
+
+    def get_group_member(self, group, member, **kwargs):
+        """Retrieves a group member."""
+        return self.get('/groups/%s/members/%s' % (group, member), params=kwargs)
+
+    def add_group_member(self, group, member, **kwargs):
+        """Adds a user as member to a Gerrit internal group."""
+
+        return self.put('/groups/%s/members/%s' % (group, member), **kwargs)
+
+    def add_group_members(self, group, members, **kwargs):
+        """Adds a user as member to a Gerrit internal group.
+        eg.
+            {
+            "members": [
+              "jane.roe@example.com",
+              "john.doe@example.com"
+            ]
+          }
+        """
+        data = {'members': members}
+        data.update(kwargs)
+
+        return self.post('/groups/%s/members.add' % group, data)
+
+    def remove_group_member(self, group, member, **kwargs):
+        """Removes a user from a Gerrit internal group."""
+
+        return self.delete('/groups/%s/members/%s' % (group, member), **kwargs)
+
+    def remove_group_members(self, group, members, **kwargs):
+        """Removes one or several users from a Gerrit internal group.
+        eg.
+            {
+            "members": [
+              "jane.roe@example.com",
+              "john.doe@example.com"
+            ]
+          }
+        """
+        data = {'members': members}
+        data.update(kwargs)
+
+        return self.post('/groups/%s/members.delete' % group, data)
+
+    def subgroups(self, group, **kwargs):
+        """Lists the direct subgroups of a group."""
+
+        return self.get('/groups/%s/groups' % group, params=kwargs)
+
+    def get_subgroup(self, group, subgroup, **kwargs):
+        """Retrieves a subgroup."""
+
+        return self.get('/groups/%s/groups/%s' % (group, subgroup), params=kwargs)
+
+    def add_subgroup(self, group, subgroup, **kwargs):
+        """Adds an internal or external group as subgroup to a Gerrit internal group. External groups must be specified using the UUID."""
+
+        return self.put('/groups/%s/groups/%s' % (group, subgroup), **kwargs)
+
+    def add_subgroups(self, group, subgroups, **kwargs):
+        """Adds one or several groups as subgroups to a Gerrit internal group.
+        eg.
+            {
+            "groups": [
+              "MyGroup",
+              "MyOtherGroup"
+            ]
+          }
+        """
+        data = {'groups': subgroups}
+        data.update(kwargs)
+
+        return self.put('/groups/%s/groups' % group, data)
+
+    def remove_subgroup(self, group, subgroup, **kwargs):
+        """Removes a subgroup from a Gerrit internal group."""
+
+        return self.delete('/groups/%s/groups/%s' % (group, subgroup), **kwargs)
+
+    def remove_subgroups(self, group, subgroups, **kwargs):
+        """Removes one or several subgroups from a Gerrit internal group.
+        eg.
+            {
+            "groups": [
+              "MyGroup",
+              "MyOtherGroup"
+            ]
+          }
+        """
+        data = {'groups': subgroups}
+        data.update(kwargs)
+
+        return self.post('/groups/%s/groups.delete' % group, data)
+
+
+    def accounts(self, **kwargs):
+        """Queries accounts visible to the caller. The query string must be provided by the q parameter.
+            The n parameter can be used to limit the returned results."""
+
+        return self.get('/accounts', params=kwargs)
+
+    def get_account(self, account, **kwargs):
+        """Returns an account as an AccountInfo entity."""
+
+        return self.get('/accounts/%s' % account, params=kwargs)
+
+    def create_account(self, username, **kwargs):
+        """Creates a new account.
+            eg. {
+                    "name": "John Doe",
+                    "email": "john.doe@example.com",
+                    "ssh_key": "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA0T...YImydZAw==",
+                    "http_password": "19D9aIn7zePb",
+                    "groups": [
+                      "MyProject-Owners"
+                    ]
+                  }
+        """
+        return self.put('/accounts/%s' % username, **kwargs)
+
+    def get_account_detail(self, account, **kwargs):
+        """Retrieves the details of an account as an AccountDetailInfo entity."""
+
+        return self.get('/accounts/%s/detail' % account, params=kwargs)
+
+    def get_account_name(self, account, **kwargs):
+        """Retrieves the full name of an account."""
+
+        return self.get('/accounts/%s/name' % account, params=kwargs)
+
+    def set_account_name(self, account, name, **kwargs):
+        """Sets the full name of an account."""
+        data = {'name': name}
+        data.update(kwargs)
+
+        return self.put('/accounts/%s/name' % account, data)
+
+    def delete_account_name(self, account, **kwargs):
+        """Deletes the name of an account."""
+
+        return self.delete('/accounts/%s/name' % account, **kwargs)
+
+    def get_account_status(self, account, **kwargs):
+        """Retrieves the status of an account."""
+
+        return self.get('/accounts/%s/status' % account, params=kwargs)
+
+    def set_account_status(self, account, **kwargs):
+        """Sets the status of an account.
+            eg. {
+                    "status": "Out Of Office"
+                  }
+        """
+
+        return self.put('/accounts/%s/status' % account, **kwargs)
+
+    def get_username(self, account, **kwargs):
+        """Retrieves the username of an account."""
+
+        return self.get('/accounts/%s/username' % account, params=kwargs)
+
+    def set_username(self, account, username, **kwargs):
+        """Sets the username of an account."""
+
+        data = {'username': username}
+        data.update(kwargs)
+
+        return self.put('/accounts/%s/username' % account, data)
+
+    def get_active(self, account, **kwargs):
+        """Checks if an account is active."""
+
+        return self.get('/accounts/%s/active' % account, params=kwargs)
+
+    def set_active(self, account, **kwargs):
+        """Sets the account state to active."""
+
+        return self.put('/accounts/%s/active' % account, **kwargs)
+
+    def delete_active(self, account, **kwargs):
+        """Sets the account state to inactive."""
+
+        return self.delete('/accounts/%s/active' % account, **kwargs)
+
+    def generate_http_password(self, account, **kwargs):
+        """Sets/Generates the HTTP password of an account."""
+
+        return self.put('/accounts/%s/password.http' % account, **kwargs)
+
+    def delete_http_password(self, account, **kwargs):
+        """Deletes the HTTP password of an account."""
+
+        return self.delete('/accounts/%s/password.http' % account, **kwargs)
+
+    def get_oauthtoken(self, account, **kwargs):
+        """Returns a previously obtained OAuth access token."""
+
+        return self.get('/accounts/%s/oauthtoken' % account, params=kwargs)
+
+    def get_account_emails(self, account, **kwargs):
+        """Returns the email addresses that are configured for the specified user."""
+
+        return self.get('/accounts/%s/emails' % account, params=kwargs)
+
+    def get_account_email(self, account, email, **kwargs):
+        """Retrieves an email address of a user."""
+
+        return self.get('/accounts/%s/emails/%s' % (account, email), params=kwargs)
+
+    def create_account_email(self, account, email, **kwargs):
+        """ Registers a new email address for the user.
+            A verification email is sent with a link that needs to be visited to confirm the email address,
+            unless DEVELOPMENT_BECOME_ANY_ACCOUNT is used as authentication type.
+            For the development mode email addresses are directly added without confirmation.
+            A Gerrit administrator may add an email address without confirmation by setting no_confirmation in the EmailInput.
+            If sendemail.allowrcpt is configured, the added email address must belong to a domain that is allowed, unless no_confirmation is set."""
+
+        return self.put('/accounts/%s/emails/%s' % (account, email), **kwargs)
+
+    def delete_account_email(self, account, email, **kwargs):
+        """Deletes an email address of an account."""
+
+        return self.delete('/accounts/%s/emails/%s' % (account, email), **kwargs)
+
+    def set_preferred_email(self, account, email, **kwargs):
+        """Sets an email address as preferred email address for an account."""
+
+        return self.put('/accounts/%s/emails/%s/preferred' % (account, email), **kwargs)
+
+
+    def list_ssh_keys(self, account, **kwargs):
+        """Returns the SSH keys of an account."""
+
+        return self.get('/accounts/%s/sshkeys' % account, params=kwargs)
+
+    def get_ssh_key(self, account, ssh_key, **kwargs):
+        """Retrieves an SSH key of a user."""
+
+        return self.get('/accounts/%s/sshkeys/%s' % (account, ssh_key), params=kwargs)
+
+    def add_ssh_key(self, account, ssh_key):
+        """Adds an SSH key for a user.
+            The SSH public key must be provided as raw content in the request body.
+        """
+        headers = {'Content-Type': 'plain/text'}
+
+        return self.session.post('/accounts/%s/sshkeys' % account, data=ssh_key, headers=headers)
+
+    def delete_ssh_key(self, account, ssh_key, **kwargs):
+        """Deletes an SSH key of a user."""
+
+        return self.delete('/accounts/%s/sshkeys/%s' % (account, ssh_key), params=kwargs)
+
+    def list_gpgkeys(self, account, **kwargs):
+        """Returns the GPG keys of an account."""
+
+        return self.get('/accounts/%s/gpgkeys' % account, params=kwargs)
+
+    def get_gpgkey(self, account, gpgkey, **kwargs):
+        """Retrieves a GPG key of a user."""
+
+        return self.get('/accounts/%s/gpgkeys/%s' % (account, gpgkey), **kwargs)
+
+    def add_or_delete_gpgkey(self, account, **kwargs):
+        """Add or delete one or more GPG keys for a user.
+            eg. {
+                "add": [
+                  "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n\nmQENBFXUpNcBCACv4paCiyKxZ0EcKy8VaWVNkJlNebRBiyw9WxU85wPOq5Gz/3GT\nRQwKqeY0SxVdQT8VNBw2sBe2m6eqcfZ2iKmesSlbXMe15DA7k8Bg4zEpQ0tXNG1L\nhceZDVQ1Xk06T2sgkunaiPsXi82nwN3UWYtDXxX4is5e6xBNL48Jgz4lbqo6+8D5\nvsVYiYMx4AwRkJyt/oA3IZAtSlY8Yd445nY14VPcnsGRwGWTLyZv9gxKHRUppVhQ\nE3o6ePXKEVgmONnQ4CjqmkGwWZvjMF2EPtAxvQLAuFa8Hqtkq5cgfgVkv/Vrcln4\nnQZVoMm3a3f5ODii2tQzNh6+7LL1bpqAmVEtABEBAAG0H0pvaG4gRG9lIDxqb2hu\nLmRvZUBleGFtcGxlLmNvbT6JATgEEwECACIFAlXUpNcCGwMGCwkIBwMCBhUIAgkK\nCwQWAgMBAh4BAheAAAoJEJNQnkuvyKSbfjoH/2OcSQOu1kJ20ndjhgY2yNChm7gd\ntU7TEBbB0TsLeazkrrLtKvrpW5+CRe07ZAG9HOtp3DikwAyrhSxhlYgVsQDhgB8q\nG0tYiZtQ88YyYrncCQ4hwknrcWXVW9bK3V4ZauxzPv3ADSloyR9tMURw5iHCIeL5\nfIw/pLvA3RjPMx4Sfow/bqRCUELua39prGw5Tv8a2ZRFbj2sgP5j8lUFegyJPQ4z\ntJhe6zZvKOzvIyxHO8llLmdrImsXRL9eqroWGs0VYqe6baQpY6xpSjbYK0J5HYcg\nTO+/u80JI+ROTMHE6unGp5Pgh/xIz6Wd34E0lWL1eOyNfGiPLyRWn1d0yZO5AQ0E\nVdSk1wEIALUycrH2HK9zQYdR/KJo1yJJuaextLWsYYn881yDQo/p06U5vXOZ28lG\nAq/Xs96woVZPbgME6FyQzhf20Z2sbr+5bNo3OcEKaKX3Eo/sWwSJ7bXbGLDxMf4S\netfY1WDC+4rTqE30JuC++nQviPRdCcZf0AEgM6TxVhYEMVYwV787YO1IH62EBICM\nSkIONOfnusNZ4Skgjq9OzakOOpROZ4tki5cH/5oSDgdcaGPy1CFDpL9fG6er2zzk\nsw3qCbraqZrrlgpinWcAduiao67U/dV18O6OjYzrt33fTKZ0+bXhk1h1gloC21MQ\nya0CXlnfR/FOQhvuK0RlbR3cMfhZQscAEQEAAYkBHwQYAQIACQUCVdSk1wIbDAAK\nCRCTUJ5Lr8ikm8+QB/4uE+AlvFQFh9W8koPdfk7CJF7wdgZZ2NDtktvLL71WuMK8\nPOmf9f5JtcLCX4iJxGzcWogAR5ed20NgUoHUg7jn9Xm3fvP+kiqL6WqPhjazd89h\nk06v9hPE65kp4wb0fQqDrtWfP1lFGuh77rQgISt3Y4QutDl49vXS183JAfGPxFxx\n8FgGcfNwL2LVObvqCA0WLqeIrQVbniBPFGocE3yA/0W9BB/xtolpKfgMMsqGRMeu\n9oIsNxB2oE61OsqjUtGsnKQi8k5CZbhJaql4S89vwS+efK0R+mo+0N55b0XxRlCS\nfaURgAcjarQzJnG0hUps2GNO/+nM7UyyJAGfHlh5\n=EdXO\n-----END PGP PUBLIC KEY BLOCK-----\n"
+                ],
+                "delete": [
+                  "DEADBEEF",
+                ]
+              }'
+        """
+
+        return self.post('/accounts/%s/gpgkeys' % account, **kwargs)
+
+    def delete_gpgkey(self, account, gpgkey, **kwargs):
+        """Deletes a GPG key of a user."""
+
+        return self.delete('/accounts/%s/gpgkeys/%s' % (account, gpgkey), **kwargs)
+
+    def list_account_capabilities(self, account, **kwargs):
+        """Returns the global capabilities that are enabled for the specified user."""
+
+        return self.get('/accounts/%s/capabilities' % account, params=kwargs)
+
+    def check_account_capabilities(self, account, capability, **kwargs):
+        """Checks if a user has a certain global capability."""
+
+        return self.get('/accounts/%s/capabilities/%s' % (account, capability), params=kwargs)
+
+    def list_groups(self, account, **kwargs):
+        """Lists all groups that contain the specified user as a member."""
+
+        return self.get('/accounts/%s/groups' % account, params=kwargs)
+
+    def get_avatar(self, account, **kwargs):
+        """Retrieves the avatar image of the user."""
+
+        return self.get('/accounts/%s/avatar' % account, params=kwargs)
+
+    def get_avatar_change_url(self, account, **kwargs):
+        """Retrieves the URL where the user can change the avatar image."""
+
+        return self.get('/accounts/%s/avatar.change.url' % account, params=kwargs)
+
+    def get_user_preferences(self, account, **kwargs):
+        """Retrieves the user’s preferences."""
+
+        return self.get('/accounts/%s/preferences' % account, params=kwargs)
+
+    def set_user_preferences(self, account, **kwargs):
+        """Sets the user’s preferences.
+        eg.{
+            "changes_per_page": 50,
+            "show_site_header": true,
+            "use_flash_clipboard": true,
+            "expand_inline_diffs": true,
+            "download_command": "CHECKOUT",
+            "date_format": "STD",
+            "time_format": "HHMM_12",
+            "size_bar_in_change_table": true,
+            "review_category_strategy": "NAME",
+            "diff_view": "SIDE_BY_SIDE",
+            "mute_common_path_prefixes": true,
+            "my": [
+              {
+                "url": "#/dashboard/self",
+                "name": "Changes"
+              },
+              {
+                "url": "#/q/has:draft",
+                "name": "Draft Comments"
+              },
+              {
+                "url": "#/q/is:watched+is:open",
+                "name": "Watched Changes"
+              },
+              {
+                "url": "#/q/is:starred",
+                "name": "Starred Changes"
+              },
+              {
+                "url": "#/groups/self",
+                "name": "Groups"
+              }
+            ],
+            "change_table": [
+              "Subject",
+              "Owner"
+            ]
+          }
+        """
+
+        return self.put('/accounts/%s/preferences' % account, **kwargs)
+
+    def get_diff_preferences(self, account, **kwargs):
+        """Retrieves the diff preferences of a user."""
+
+        return self.get('/accounts/self/preferences.diff' % account, params=kwargs)
+
+    def set_diff_preferences(self, account, **kwargs):
+        """Sets the diff preferences of a user.
+        eg.{
+            "context": 10,
+            "theme": "ECLIPSE",
+            "ignore_whitespace": "IGNORE_ALL",
+            "intraline_difference": true,
+            "line_length": 100,
+            "cursor_blink_rate": 500,
+            "show_line_endings": true,
+            "show_tabs": true,
+            "show_whitespace_errors": true,
+            "syntax_highlighting": true,
+            "tab_size": 8,
+            "font_size": 12
+          }
+        """
+
+        return self.put('/accounts/self/preferences.diff' % account, **kwargs)
+
+    def get_edit_preferences(self, account, **kwargs):
+        """Retrieves the edit preferences of a user."""
+
+        return self.get('/accounts/self/preferences.edit' % account, params=kwargs)
+
+    def set_edit_preferences(self, account, **kwargs):
+        """Sets the edit preferences of a user.
+        eg.{
+            "theme": "ECLIPSE",
+            "key_map_type": "VIM",
+            "tab_size": 4,
+            "line_length": 80,
+            "indent_unit": 2,
+            "cursor_blink_rate": 530,
+            "hide_top_menu": true,
+            "show_tabs": true,
+            "show_whitespace_errors": true,
+            "syntax_highlighting": true,
+            "hide_line_numbers": true,
+            "match_brackets": true,
+            "line_wrapping": false,
+            "auto_close_brackets": true
+          }
+        """
+
+        return self.put('/accounts/self/preferences.edit' % account, **kwargs)
+
+    def get_watched_projects(self, account, **kwargs):
+        """Retrieves all projects a user is watching."""
+
+        return self.get('/accounts/self/watched.projects' % account, params=kwargs)
+
+    def update_watched_projects(self, account, projects):
+        """Add new projects to watch or update existing watched projects.
+        Projects that are already watched by a user will be updated with the provided configuration.
+        All other projects in the request will be watched using the provided configuration.
+        eg. [
+                {
+                  "project": "Test Project 1",
+                  "notify_new_changes": true,
+                  "notify_new_patch_sets": true,
+                  "notify_all_comments": true,
+                }
+              ]
+        """
+
+        return self.post('/accounts/self/watched.projects' % account, projects)
+
+    def delete_watched_projects(self, account, projects):
+        """Projects posted to this endpoint will no longer be watched. The posted body can contain a list of ProjectWatchInfo entities.
+            eg. [
+                    {
+                      "project": "Test Project 1",
+                      "filter": "branch:master"
+                    }
+                  ]
+        """
+
+        return self.post('/accounts/self/watched.projects:delete' % account, projects)
+
+    def get_account_external_ids(self, account, **kwargs):
+        """Retrieves the external ids of a user account."""
+
+        return self.get('/accounts/%s/external.ids' % account, params=kwargs)
+
+    def delete_account_external_ids(self, account, **kwargs):
+        """Delete a list of external ids for a user account.
+        The target external ids must be provided as a list in the request body.
+        eg.[
+            "mailto:john.doe@example.com"
+          ]
+        """
+
+        return self.post('/accounts/%s/external.ids:delete' % account, **kwargs)
+
+    def list_contributor_agreements(self, account, **kwargs):
+        """Gets a list of the user’s signed contributor agreements."""
+
+        return self.get('/accounts/self/agreements' % account, params=kwargs)
+
+    def delete_draft_comments(self, account, **kwargs):
+        """Deletes some or all of a user’s draft comments.
+            The set of comments to delete is specified as a DeleteDraftCommentsInput entity.
+            An empty input entity deletes all comments.
+            eg. {
+                    "query": "is:abandoned"
+                  }
+            """
+
+        return self.post('/accounts/%s/drafts.delete' % account, **kwargs)
+
+    def sign_contributor_agreement(self, account, **kwargs):
+        """Signs a contributor agreement.
+            eg.{
+                "name": "Individual"
+              }
+        """
+
+        return self.put('/accounts/%s/agreements' % account, **kwargs)
+
+    def index_account(self, account, **kwargs):
+        """Adds or updates the account in the secondary index."""
+
+        return self.post('/accounts/%s/index' % account, **kwargs)
+
+    def get_changes_with_default_star(self, account, **kwargs):
+        """Gets the changes that were starred with the default star by the identified user account.
+        This URL endpoint is functionally identical to the changes query GET /changes/?q=is:starred. The result is a list of ChangeInfo entities."""
+
+        return self.get('/accounts/%s/starred.changes' % account, params=kwargs)
+
+    def put_default_star_on_change(self, account, change_id, **kwargs):
+        """Star a change with the default label.
+        Changes starred with the default label are returned for the search query is:starred or starredby:USER and automatically notify the user whenever updates are made to the change."""
+
+        return self.put('/accounts/%s/starred.changes/%s' % (account, change_id), **kwargs)
+
+    def remove_default_start_from_change(self, account, change_id, **kwargs):
+        """Remove the default star label from a change. This stops notifications."""
+
+        return self.delete('/accounts/%s/starred.changes/%s' % (account, change_id), **kwargs)
+
+    def get_starred_changes(self, account, **kwargs):
+        """Gets the changes that were starred with any label by the identified user account.
+            This URL endpoint is functionally identical to the changes query GET /changes/?q=has:stars.
+            The result is a list of ChangeInfo entities."""
+
+        return self.get('/accounts/%s/stars.changes' % account, params=kwargs)
+
+    def get_star_labels_from_change(self, account, change_id, **kwargs):
+        """Get star labels from a change."""
+
+        return self.get('/accounts/%s/stars.changes/%s' % (account, change_id),params=kwargs)
+
+    def update_star_labels_on_change(self, account, change_id, **kwargs):
+        """
+        Update star labels on a change.
+        The star labels to be added/removed must be specified in the request body as StarsInput entity.
+        Starred changes are returned for the search query has:stars.
+        eg. {
+                "add": [
+                  "blue",
+                  "red"
+                ],
+                "remove": [
+                  "yellow"
+                ]
+              }
+
+        """
+        return self.post('/accounts/%s/stars.changes/%s' % (account, change_id), **kwargs)
 
 if __name__ == '__main__':
     gerrit = GerritRestApi('http://172.16.20.56', 'allen.you', 'allen.you')
     # print(gerrit.create_project('vivo4', description='vivo4'))
     # print(gerrit.check_access('oppo', account=1000098, ref='refs/heads/master'))
     # print(gerrit.projects(p='SPF2018'))
-    print(gerrit.branches('vivo3', n=1))
+    # print(gerrit.groups())
+    print(gerrit.get_watched_projects('self'))
