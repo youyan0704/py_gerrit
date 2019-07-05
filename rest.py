@@ -49,17 +49,17 @@ class ResetApi(object):
         response = self.session.get(self.make_url(endpoint), **kwargs)
         return _decode_response(response)
 
-    def put(self, endpoint, data):
+    def put(self, endpoint, data, **kwargs):
         if self.session.cookies.get('XSRF_TOKEN'):
             self.kwargs["headers"].update(
                 {"x-gerrit-auth": self.session.cookies.get('XSRF_TOKEN')})
-        response = self.session.put(self.make_url(endpoint), data=data)
+        response = self.session.put(self.make_url(endpoint), data=data, **kwargs)
         return _decode_response(response)
 
-    def post(self, endpoint, data):
+    def post(self, endpoint, data, **kwargs):
         self.kwargs["headers"].update(
             {"Content-Type": "application/json;charset=utf-8"})
-        response = self.session.post(self.make_url(endpoint), data=data)
+        response = self.session.post(self.make_url(endpoint), data=data, **kwargs)
         return _decode_response(response)
 
     def delete(self, endpoint, **kwargs):
@@ -646,7 +646,6 @@ class GerritRestApi(ResetApi):
 
         return self.post('/groups/%s/index' % group_id, **kwargs)
 
-
     def group_members(self, group, **kwargs):
         """Lists the direct members of a Gerrit internal group."""
 
@@ -745,7 +744,6 @@ class GerritRestApi(ResetApi):
         data.update(kwargs)
 
         return self.post('/groups/%s/groups.delete' % group, data)
-
 
     def accounts(self, **kwargs):
         """Queries accounts visible to the caller. The query string must be provided by the q parameter.
@@ -880,7 +878,6 @@ class GerritRestApi(ResetApi):
         """Sets an email address as preferred email address for an account."""
 
         return self.put('/accounts/%s/emails/%s/preferred' % (account, email), **kwargs)
-
 
     def list_ssh_keys(self, account, **kwargs):
         """Returns the SSH keys of an account."""
@@ -1166,7 +1163,7 @@ class GerritRestApi(ResetApi):
     def get_star_labels_from_change(self, account, change_id, **kwargs):
         """Get star labels from a change."""
 
-        return self.get('/accounts/%s/stars.changes/%s' % (account, change_id),params=kwargs)
+        return self.get('/accounts/%s/stars.changes/%s' % (account, change_id), params=kwargs)
 
     def update_star_labels_on_change(self, account, change_id, **kwargs):
         """
@@ -1206,7 +1203,6 @@ class GerritRestApi(ResetApi):
 
         return self.post('/config/server/check.consistency', consistency)
 
-
     def reload_config(self):
         """Reloads the gerrit.config configuration."""
 
@@ -1228,11 +1224,9 @@ class GerritRestApi(ResetApi):
         return self.get('/config/server/caches/', params=kwargs)
 
     def flush_all_caches(self):
-
         return self.post('/config/server/caches', {"operation": "FLUSH_ALL"})
 
     def flush_several_caches_at_once(self, **kwargs):
-
         data = {"operation": "FLUSH"}
         data.update(kwargs)
         return self.post('/config/server/caches', data)
@@ -1314,6 +1308,538 @@ class GerritRestApi(ResetApi):
 
         return self.get('/access', params=kwargs)
 
+    def create_change(self, change):
+        """The change input ChangeInput entity must be provided in the request body.
+            eg. {
+                    "project" : "myProject",
+                    "subject" : "Let's support 100% Gerrit workflow direct in browser",
+                    "branch" : "master",
+                    "topic" : "create-change-in-browser",
+                    "status" : "NEW"
+                  }
+        """
+
+        return self.post('/changes', change)
+
+    def query_changes(self, **kwargs):
+        """Queries changes visible to the caller. The query string must be provided by the q parameter. The n parameter can be used to limit the returned results."""
+
+        return self.get('/changes', params=kwargs)
+
+    def get_change(self, change):
+        """Retrieves a change.
+        eg. /changes/myProject~master~I8473b95934b5732ac55d26311a706c9c2bde9940
+        """
+
+        return self.get('/changes/%s' % change)
+
+    def get_change_detail(self, change):
+        """Retrieves a change with labels, detailed labels, detailed accounts, reviewer updates, and messages."""
+
+        return self.get('changes/%s/detail' % change)
+
+    def create_merge_patch_set_for_change(self, change, **kwargs):
+        """Update an existing change by using a MergePatchSetInput entity.
+        eg.{
+                "subject": "Merge dev_branch into master",
+                "merge": {
+                  "source": "refs/changes/34/1234/1"
+                }
+            }
+        """
+
+        return self.post('/changes/%s/merge' % change, kwargs)
+
+    def set_commit_message(self, change, message, **kwargs):
+        """"Creates a new patch set with a new commit message.
+        eg.{
+            "message": "New Commit message \n\nChange-Id: I10394472cbd17dd12454f229e4f6de00b143a444\n"
+          }
+        """
+        data = {'message': message}
+        data.update(kwargs)
+
+        return self.put('/changes/%s/message' % change, data)
+
+    def get_topic(self, change):
+        """Retrieves the topic of a change."""
+
+        return self.get('/changes/%s/topic' % change)
+
+    def set_topic(self, change, topic, **kwargs):
+        """Sets the topic of a change."""
+        data = {'topic': topic}
+        data.update(kwargs)
+
+        return self.put('/changes/%s/topic' % change, data)
+
+    def delete_topic(self, change):
+        """Deletes the topic of a change."""
+
+        return self.delete('/changes/%s/topic' % change)
+
+    def get_assignee(self, change):
+        """Retrieves the account of the user assigned to a change."""
+
+        return self.get('/changes/%s/assignee' % change)
+
+    def get_past_assignees(self, change):
+        """Returns a list of every user ever assigned to a change, in the order in which they were first assigned."""
+
+        return self.get('/changes/%s/past_assignees' % change)
+
+    def set_assignee(self, change, assignee, **kwargs):
+        """Sets the assignee of a change."""
+        data = {'assignee': assignee}
+        data.update(kwargs)
+
+        return self.put('/changes/%s/assignee' % change, data)
+
+    def delete_assignee(self, change):
+        """Deletes the assignee of a change."""
+
+        return self.delete('/changes/%s/assignee' % change)
+
+    def get_pure_revert(self, change, **kwargs):
+        """Check if the given change is a pure revert of the change it references in revertOf. """
+
+        return self.get('/changes/%s/pure_revert' % change, params=kwargs)
+
+    def abandon_change(self, change, **kwargs):
+        """Abandons a change."""
+
+        return self.post('/changes/%s/abandon' % change, kwargs)
+
+    def restore_change(self, change, **kwargs):
+        """Restores a change."""
+
+        return self.post('/changes/%s/restore' % change, kwargs)
+
+    def rebase_change(self, change, **kwargs):
+        """Rebases a change."""
+
+        return self.post('/changes/%s/rebase' % change, kwargs)
+
+    def move_change(self, change, destination_branch, **kwargs):
+        """move a change."""
+        data = {'destination_branch': destination_branch}
+        data.update(kwargs)
+
+        return self.post('/changes/%s/move' % change, data)
+
+    def revert_change(self, change, **kwargs):
+        """Reverts a change."""
+
+        return self.post('/changes/%s/revert' % change, kwargs)
+
+    def submit_change(self, change, **kwargs):
+        """Submits a change."""
+
+        return self.post('/changes/%s/submit' % change, kwargs)
+
+    def changes_submmited_together(self, change, **kwargs):
+        """Computes list of all changes which are submitted when Submit is called for this change, including the current change itself."""
+
+        return self.get('/changes/%s/submitted_together' % change, params=kwargs)
+
+    def delete_change(self, change):
+        """Deletes a change."""
+
+        return self.delete('/changes/%s' % change)
+
+    def get_include_in(self, change):
+        """Retrieves the branches and tags in which a change is included. As result an IncludedInInfo entity is returned."""
+
+        return self.get('/changes/%s/in' % change)
+
+    def index_change(self, change, **kwargs):
+        """Adds or updates the change in the secondary index."""
+
+        return self.post('/changes/%s/index' % change, kwargs)
+
+    def list_change_comments(self, change):
+        """Lists the published comments of all revisions of the change."""
+
+        return self.get('/changes/%s/comments' % change)
+
+    def list_change_robotcomments(self, change):
+        """Lists the robot comments of all revisions of the change."""
+
+        return self.get('/changes/%s/robotcomments' % change)
+
+    def list_change_drafts(self, change):
+        """Lists the draft comments of all revisions of the change that belong to the calling user."""
+
+        return self.get('/changes/%s/drafts' % change)
+
+    def check_change(self, change):
+        """Performs consistency checks on the change, and returns a ChangeInfo entity with the problems field set to a list of ProblemInfo entities."""
+
+        return self.get('/changes/%s/check' % change)
+
+    def fix_change(self, change, **kwargs):
+        """Performs consistency checks on the change, and returns a ChangeInfo entity with the problems field set to a list of ProblemInfo entities."""
+
+        return self.post('/changes/%s/check' % change, kwargs)
+
+    def set_workin_progress(self, change, **kwargs):
+        """Marks the change as not ready for review yet. Changes may only be marked not ready by the owner, project owners or site administrators."""
+
+        return self.post('/changes/%s/wip' % change, kwargs)
+
+    def set_ready_for_review(self, change, **kwargs):
+        """Marks the change as ready for review (set WIP property to false). Changes may only be marked ready by the owner, project owners or site administrators."""
+
+        return self.post('/changes/%s/ready' % change, kwargs)
+
+    def mark_private(self, change, **kwargs):
+        """"Marks the change to be non-private. Note users can only unmark own private changes."""
+
+        return self.post('/changes/%s/private' % change, kwargs)
+
+    def unmark_private(self, change):
+        """"Marks the change to be private. Only open changes can be marked private. Changes may only be marked private by the owner or site administrators."""
+
+        return self.delete('/changes/%s/private' % change)
+
+    def ignore(self, change, **kwargs):
+        """"MMarks a change as ignored. The change will not be shown in the incoming reviews dashboard, and email notifications will be suppressed. Ignoring a change does not cause the change’s "updated" timestamp to be modified, and the owner is not notified. Changes may only be marked private by the owner or site administrators."""
+
+        return self.put('/changes/%s/ignore' % change, kwargs)
+
+    def unignore(self, change, **kwargs):
+        """"Un-marks a change as ignored."""
+
+        return self.put('/changes/%s/unignore' % change, kwargs)
+
+    def mark_as_reviewed(self, change, **kwargs):
+        """Marks a change as reviewed."""
+
+        return self.put('/changes/%s/reviewed' % change, kwargs)
+
+    def mark_as_unreviewed(self, change, **kwargs):
+        """Marks a change as unreviewed."""
+
+        return self.put('/changes/%s/unreviewed' % change, kwargs)
+
+    def get_hashtags(self, change):
+        """Gets the hashtags associated with a change.."""
+
+        return self.get('/changes/%s/hashtags' % change)
+
+    def set_hashtags(self, change, **kwargs):
+        """Adds and/or removes hashtags from a change."""
+
+        return self.post('/changes/%s/hashtags' % change, kwargs)
+
+    def list_change_messages(self, change):
+        """Lists all the messages of a change including detailed account information."""
+
+        return self.get('/changes/%s/messages' % change)
+
+    def get_change_messages(self, change, change_message):
+        """Retrieves a change message including detailed account information."""
+
+        return self.get('/changes/%s/messages/%s' % (change, change_message))
+
+    def delete_change_messages(self, change, change_message):
+        """Retrieves a change message including detailed account information."""
+
+        return self.delete('/changes/%s/messages/%s' % (change, change_message))
+
+    def get_change_edit_details(self, change):
+        """Retrieves a change edit details."""
+
+        return self.get('/changes/%s/edit' % change)
+
+    def list_reviewers(self, change):
+        """Lists the reviewers of a change."""
+
+        return self.get('/changes/%s/reviewers' % change)
+
+    def suggest_reviewers(self, change, **kwargs):
+        """Suggest the reviewers for a given query q and result limit n. If result limit is not passed, then the default 10 is used."""
+
+        return self.get('/changes/%s/suggest_reviewers' % change, params=kwargs)
+
+    def get_reviewer(self, change, account):
+        """Retrieves a reviewer of a change."""
+
+        return self.get('/changes/%s/reviewers/%s' % (change, account))
+
+    def add_reviewer(self, change, account, **kwargs):
+        """Adds one user or all members of one group as reviewer to the change.
+        eg.{
+            "reviewer": "john.doe@example.com"
+          }
+        """
+        data = {'reviewer', account}
+        data.update(kwargs)
+
+        return self.get('/changes/%s/reviewers' % change, data)
+
+    def delete_reviewer(self, change, account):
+        """Deletes a reviewer from a change."""
+
+        return self.delete('/changes/%s/reviewers/%s' % (change, account))
+
+    def list_votes(self, change, account):
+        """Lists the votes for a specific reviewer of the change."""
+
+        return self.get('/changes/%s/reviewers/%s/votes' % (change, account))
+
+    def delete_votes(self, change, account):
+        """Deletes a single vote from a change. Note, that even when the last vote of a reviewer is removed the reviewer itself is still listed on the change."""
+
+        return self.delete('/changes/%s/reviewers/%s/votes' % (change, account))
+
+    def get_commit_from_revision(self, change, revision):
+        """"Retrieves a parsed commit of a revision."""
+
+        return self.get('/changes/%s/revisions/%s/commit' % (change, revision))
+
+    def get_description(self, change, revision):
+        """Retrieves the description of a patch set."""
+
+        return self.get('/changes/%s/revisions/%s/description' % (change, revision))
+
+    def set_description(self, change, revision, description):
+        """Sets the description of a patch set."""
+
+        data = {'description': description}
+        return self.put('/changes/%s/revisions/%s/description' % (change, revision), data)
+
+    def get_mergelist(self, change, revision):
+        """Returns the list of commits that are being integrated into a target branch by a merge commit. """
+
+        return self.get('/changes/%s/revisions/%s/mergelist' % (change, revision))
+
+    def get_revision_actions(self, change, revision):
+        """Retrieves revision actions of the revision of a change."""
+
+        return self.get('/changes/%s/revisions/%s/actions' % (change, revision))
+
+    def get_review(self, change, revision):
+        """Retrieves a review of a revision."""
+
+        return self.get('/changes/%s/revisions/%s/review' % (change, revision))
+
+    def get_related_changes(self, change, revision):
+        """Retrieves related changes of a revision. Related changes are changes that either depend on, or are dependencies of the revision."""
+
+        return self.get('/changes/%s/revisions/%s/related' % (change, revision))
+
+    def set_review(self, change, revision, **kwargs):
+        """Sets a review on a revision, optionally also publishing draft comments, setting labels, adding reviewers or CCs, and modifying the work in progress property.
+        eg.{
+            "tag": "jenkins",
+            "message": "Some nits need to be fixed.",
+            "labels": {
+              "Code-Review": -1
+            },
+            "comments": {
+              "gerrit-server/src/main/java/com/google/gerrit/server/project/RefControl.java": [
+                {
+                  "line": 23,
+                  "message": "[nit] trailing whitespace"
+                },
+                {
+                  "line": 49,
+                  "message": "[nit] s/conrtol/control"
+                },
+                {
+                  "range": {
+                    "start_line": 50,
+                    "start_character": 0,
+                    "end_line": 55,
+                    "end_character": 20
+                  },
+                  "message": "Incorrect indentation"
+                }
+              ]
+            }
+          }
+        """
+
+        return self.post('/changes/%s/revisions/%s/review' % (change, revision), kwargs)
+
+    def rebase_revision(self, change, revision, **kwargs):
+        """Rebases a revision."""
+
+        return self.post('/changes/%s/revisions/%s/rebase' % (change, revision), kwargs)
+
+    def submit_revision(self, change, revision, **kwargs):
+        """Rebases a revision."""
+
+        return self.post('/changes/%s/revisions/%s/submit' % (change, revision), **kwargs)
+
+    def get_patch(self, change, revision):
+        """Gets the formatted patch for one revision."""
+
+        return self.get('/changes/%s/revisions/%s/patch' % (change, revision))
+
+    def submit_preview(self, change, revision):
+        """Gets a file containing thin bundles of all modified projects if this change was submitted. """
+
+        return self.get('/changes/%s/revisions/%s/preview_submit' % (change, revision))
+
+    def get_mergeable(self, change, revision):
+        """Gets the method the server will use to submit (merge) the change and an indicator if the change is currently mergeable."""
+
+        return self.get('/changes/%s/revisions/%s/mergeable' % (change, revision))
+
+    def get_submit_type(self, change, revision):
+        """Gets the method the server will use to submit (merge) the change."""
+
+        return self.get('/changes/%s/revisions/%s/submit_type' % (change, revision))
+
+    def test_submit_type(self, change, revision, submit_type):
+        """Tests the submit_type Prolog rule in the project, or the one given."""
+
+        headers = {'Content-Type': 'text/plain; charset-UTF-8'}
+        return self.post('/changes/%s/revisions/%s/test.submit_type' % (change, revision), data=submit_type,
+                         headers=headers)
+
+    def test_submit_rule(self, change, revision, submit_rule):
+        """Tests the submit_rule Prolog rule in the project, or the one given."""
+
+        headers = {'Content-Type': 'text/plain; charset-UTF-8'}
+        return self.post('/changes/%s/revisions/%s/test.submit_rule' % (change, revision), data=submit_rule,
+                         headers=headers)
+
+    def list_revision_drafts(self, change, revision):
+        """Lists the draft comments of a revision that belong to the calling user."""
+
+        return self.get('/changes/%s/revisions/%s/drafts' % (change, revision))
+
+    def create_revision_drafts(self, change, revision, drafts):
+        """Creates a draft comment on a revision.
+        eg.{
+            "path": "gerrit-server/src/main/java/com/google/gerrit/server/project/RefControl.java",
+            "line": 23,
+            "message": "[nit] trailing whitespace"
+          }
+        """
+
+        return self.put('/changes/%s/revisions/%s/drafts' % (change, revision), drafts)
+
+    def get_revision_drafts(self, change, revision, draft):
+        """Retrieves a draft comment of a revision that belongs to the calling user."""
+
+        return self.get('/changes/%s/revisions/%s/drafts/%s' % (change, revision, draft))
+
+    def update_revision_drafts(self, change, revision, draft, drafts):
+        """Creates a draft comment on a revision.
+        eg.{
+            "path": "gerrit-server/src/main/java/com/google/gerrit/server/project/RefControl.java",
+            "line": 23,
+            "message": "[nit] trailing whitespace"
+          }
+        """
+
+        return self.put('/changes/%s/revisions/%s/drafts/%s' % (change, revision, draft), drafts)
+
+    def delete_revision_drafts(self, change, revision, draft):
+        """Deletes a draft comment from a revision."""
+
+        return self.delete('/changes/%s/revisions/%s/drafts/%s' % (change, revision, draft))
+
+    def list_revision_comments(self, change, revision):
+        """Lists the published comments of a revision."""
+
+        return self.get('/changes/%s/revisions/%s/comments' % (change, revision))
+
+    def get_revision_comments(self, change, revision, comment):
+        """Retrieves a published comment of a revision."""
+
+        return self.get('/changes/%s/revisions/%s/comments/%s' % (change, revision, comment))
+
+    def delete_revision_comments(self, change, revision, comment, **kwargs):
+        """Deletes a published comment of a revision. """
+
+        return self.delete('/changes/%s/revisions/%s/comments/%s' % (change, revision, comment), kwargs)
+
+    def list_revision_robotcomments(self, change, revision):
+        """Lists the robot comments of a revision."""
+
+        return self.get('/changes/%s/revisions/%s/robotcomments' % (change, revision))
+
+    def get_revision_robotcomments(self, change, revision, robotcomments):
+        """Retrieves a robot comment of a revision."""
+
+        return self.get('/changes/%s/revisions/%s/robotcomments/%s' % (change, revision, robotcomments))
+
+    def apply_fix(self, change, revision, fix):
+        """Applies a suggested fix by creating a change edit which includes the modifications indicated by the fix suggestion. """
+
+        return self.post('/changes/%s/revisions/%s/fixes/%s/apply' % (change, revision, fix), None)
+
+    def list_revision_files(self, change, revision):
+        """Lists the files that were modified, added or deleted in a revision."""
+
+        return self.get('/changes/%s/revisions/%s/files' % (change, revision))
+
+    def get_revision_files_content(self, change, revision, file):
+        """Gets the content of a file from a certain revision."""
+
+        return self.get('/changes/%s/revisions/%s/files/%s/content' % (change, revision, file))
+
+    def download_revision_files_content(self, change, revision, file):
+        """Downloads the content of a file from a certain revision, in a safe format that poses no risk for inadvertent execution of untrusted code."""
+
+        return self.get('/changes/%s/revisions/%s/files/%s/download' % (change, revision, file))
+
+    def get_revision_files_diff(self, change, revision, file, **kwargs):
+        """GGets the diff of a file from a certain revision."""
+
+        return self.get('/changes/%s/revisions/%s/files/%s/diff' % (change, revision, file), params=kwargs)
+
+    def get_revision_files_blame(self, change, revision, file):
+        """Gets the blame of a file from a certain revision."""
+
+        return self.get('/changes/%s/revisions/%s/files/%s/blame' % (change, revision, file))
+
+    def set_revision_files_reviewed(self, change, revision, file):
+        """Marks a file of a revision as reviewed by the calling user."""
+
+        return self.put('/changes/%s/revisions/%s/files/%s/reviewed' % (change, revision, file), None)
+
+    def delete_revision_files_reviewed(self, change, revision, file):
+        """Deletes the reviewed flag of the calling user from a file of a revision."""
+
+        return self.delete('/changes/%s/revisions/%s/files/%s/reviewed' % (change, revision, file))
+
+    def cherrypick_revision(self, change, revision, destination, message, **kwargs):
+        """Cherry picks a revision to a destination branch.
+        eg.{
+                "message" : "Implementing Feature X",
+                "destination" : "release-branch"
+              }
+        """
+        data = {
+            "message": message,
+            "destination": destination
+        }
+        data.update(kwargs)
+
+        return self.post('/changes/%s/revisions/%s/cherrypick' % (change, revision), data)
+
+    def list_revision_reviewers(self, change, revision):
+        """Lists the reviewers of a revision."""
+
+        return self.get('/changes/%s/revisions/%s/reviewers' % (change, revision))
+
+    def list_revision_votes(self, change, revision, account):
+        """Lists the votes for a specific reviewer of the revision."""
+
+        return self.get('/changes/%s/revisions/%s/reviewers/%s/votes' % (change, revision, account))
+
+    def delete_revision_votes(self, change, revision, account, label):
+        """Deletes a single vote from a revision. The deletion will be possible only if the revision is the current revision.
+            By using this endpoint you can prevent deleting the vote (with same label) from a newer patch set by mistake."""
+
+        return self.delete('/changes/%s/revisions/%s/reviewers/%s/votes/%s' % (change, revision, account, label))
+
 
 if __name__ == '__main__':
     gerrit = GerritRestApi('http://172.16.20.56', 'allen.you', 'allen.you')
@@ -1321,4 +1847,4 @@ if __name__ == '__main__':
     # print(gerrit.check_access('oppo', account=1000098, ref='refs/heads/master'))
     # print(gerrit.projects(p='SPF2018'))
     # print(gerrit.groups())
-    print(gerrit.get_top_menu())
+    print(gerrit.list_access_rights(project='oppo'))
